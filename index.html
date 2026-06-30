@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bisou-Biel 💋 — Webcams & Vent du lac de Bienne</title>
+<title>Bisou-Biel 💋 — Lake Biel webcams & wind</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -45,33 +45,38 @@
   a { color: var(--accent); }
   .chartcard { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
   .stationhead { text-align: center; font-size: 1.3rem; font-weight: 600; letter-spacing: .02em; margin: 2px 0 2px; }
-  .readouts { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin: 2px 0 12px; font-size: 0.9rem; }
+  .readouts { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin: 2px 0 4px; font-size: 0.95rem; }
   .readouts b { color: #fff; }
+  .topbar { padding: 16px 18px; }
   .chartbox { position: relative; height: 340px; }
-  .chartbox + .chartbox { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
   .windwrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   iframe#biel { display: block; width: 100%; height: 820px; border: 0; background: #fff; }
-  /* iframe station officielle : on recadre pour ne montrer que les relevés (le graphe interne reste blanc) */
-  .stationwrap { background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; height: 330px; }
-  iframe#station { display: block; width: 100%; height: 330px; border: 0; background: #fff; }
 </style>
 </head>
 <body>
   <header>
     <h1>Bisou-Biel 💋</h1>
-    <div class="sub">Lac de Bienne — Nidauwald / Wingreis (Magglingen-Macolin). Webcam en direct + vent + vue bielersee.live.</div>
+    <div class="sub">Lake Biel — Nidauwald / Wingreis (Magglingen-Macolin). Live webcam, wind &amp; bielersee.live cams.</div>
   </header>
+
+  <!-- TOP : live readings (figures) from the Wingreis station -->
+  <div class="frame">
+    <div class="chartcard topbar">
+      <div class="stationhead" id="stationHead">Wingreis station</div>
+      <div class="readouts" id="readouts"><span class="sub">Loading live readings…</span></div>
+    </div>
+  </div>
 
   <!-- WEBCAM 1 : Windy / swisswebcams (direct) -->
   <div class="frame">
     <h2>Webcam — Nidauwald / Macolin</h2>
     <div class="imgwrap">
-      <img id="cam1" alt="Webcam Nidauwald / Macolin">
+      <img id="cam1" alt="Nidauwald / Macolin webcam">
       <div class="badge"><span id="dot1" class="dot"></span><span id="b1">…</span></div>
     </div>
     <div class="controls">
-      <button id="refreshBtn">↻ Rafraîchir</button>
-      <label class="sub">Auto :
+      <button id="refreshBtn">↻ Refresh</button>
+      <label class="sub">Auto:
         <select id="interval">
           <option value="0">off</option>
           <option value="30">30 s</option>
@@ -83,118 +88,124 @@
       <span class="status" id="camStatus"></span>
     </div>
     <div class="sub" style="margin-top:6px">
-      Source : <a href="https://www.swisswebcams.ch/webcam/zoom/1423817599-Nidauwald-Magglingen-Macolin-Lake-Biel-%280-Ipsach%29_Wetter" target="_blank" rel="noopener">swisswebcams.ch</a> (CDN Windy)
+      Source: <a href="https://www.swisswebcams.ch/webcam/zoom/1423817599-Nidauwald-Magglingen-Macolin-Lake-Biel-%280-Ipsach%29_Wetter" target="_blank" rel="noopener">swisswebcams.ch</a> (Windy CDN)
     </div>
   </div>
 
-  <!-- STATION WINGREIS : graphes maison (wind.json publié par GitHub Action) -->
+  <!-- WIND : Wingreis station (wind.json published by GitHub Action) -->
   <div class="frame">
-    <h2>Station Wingreis</h2>
+    <h2>Wind — Wingreis station</h2>
     <div class="chartcard">
-      <div class="stationhead" id="stationHead">Wingreis</div>
-      <div class="readouts" id="readouts"><span class="sub">Chargement des données…</span></div>
       <div class="chartbox"><canvas id="windChart"></canvas></div>
-      <div class="chartbox" id="meteoBox" style="display:none"><canvas id="meteoChart"></canvas></div>
     </div>
     <div class="sub" style="margin-top:6px">
-      Données station <a href="https://wingreis.meteobase.ch/" target="_blank" rel="noopener">wingreis.meteobase.ch</a>
-      (mesures 10 min, ≈ 10 dernières heures), publiées en <code>wind.json</code> par une GitHub Action.
-    </div>
-
-    <!-- Relevés officiels de la station, intégrés en iframe recadré -->
-    <h2 style="margin-top:18px">Relevés officiels</h2>
-    <div class="stationwrap">
-      <iframe id="station" src="https://wingreis.meteobase.ch/" title="Station Wingreis — relevés officiels" loading="lazy" scrolling="no"></iframe>
-    </div>
-    <div class="sub" style="margin-top:6px">
-      Panneau officiel (vent, température de l'eau, gust-factor). Page complète :
-      <a href="https://wingreis.meteobase.ch/" target="_blank" rel="noopener">ouvrir wingreis.meteobase.ch</a>.
+      Station data <a href="https://wingreis.meteobase.ch/" target="_blank" rel="noopener">wingreis.meteobase.ch</a>
+      (10-min readings, ≈ last 10 h), published to <code>wind.json</code> by a GitHub Action.
     </div>
   </div>
 
-  <!-- PRÉVISION : MétéoSuisse (forecast.json publié par GitHub Action) -->
+  <!-- FORECAST : MeteoSwiss (forecast.json published by GitHub Action) -->
   <div class="frame">
-    <h2>Prévision rafales — MétéoSuisse (Ipsach)</h2>
+    <h2>Gust forecast — MeteoSwiss (Ipsach)</h2>
     <div class="chartcard">
-      <div class="readouts" id="fcReadouts"><span class="sub">Chargement de la prévision…</span></div>
+      <div class="readouts" id="fcReadouts"><span class="sub">Loading forecast…</span></div>
       <div class="chartbox"><canvas id="fcChart"></canvas></div>
     </div>
     <div class="sub" style="margin-top:6px">
-      Données : <a href="https://www.meteosuisse.admin.ch/previsions-locales/ipsach/2563.html#forecast-tab=wind-gust-peaks" target="_blank" rel="noopener">MétéoSuisse — Ipsach 2563</a>
-      (prévision horaire ~6 jours), publiées en <code>forecast.json</code> par la GitHub Action.
+      Data: <a href="https://www.meteoswiss.admin.ch/local-forecasts/ipsach/2563.html#forecast-tab=wind-gust-peaks" target="_blank" rel="noopener">MeteoSwiss — Ipsach 2563</a>
+      (hourly forecast ~6 days), published to <code>forecast.json</code> by the GitHub Action.
     </div>
   </div>
 
-  <!-- WEBCAM 2 : bielersee.live en iframe -->
+  <!-- WEBCAM 2 : bielersee.live in an iframe -->
   <div class="frame">
-    <h2>Webcams bielersee.live</h2>
+    <h2>Webcams — bielersee.live</h2>
     <div class="windwrap">
-      <iframe id="biel" src="https://bielersee.live/" title="Webcams bielersee.live" loading="lazy"></iframe>
+      <iframe id="biel" src="https://bielersee.live/" title="bielersee.live webcams" loading="lazy"></iframe>
     </div>
     <div class="sub" style="margin-top:6px">
-      Source : <a href="https://bielersee.live/" target="_blank" rel="noopener">bielersee.live</a>
-      (page intégrée — fais défiler à l'intérieur du cadre pour voir les autres caméras)
+      Source: <a href="https://bielersee.live/" target="_blank" rel="noopener">bielersee.live</a>
+      (embedded page — scroll inside the frame to see the other cameras)
     </div>
+  </div>
+
+  <!-- BOTTOM : water temperature (Wingreis station) -->
+  <div class="frame">
+    <h2>Water temperature — Wingreis station</h2>
+    <div class="chartcard" id="meteoBox" style="display:none">
+      <div class="chartbox"><canvas id="meteoChart"></canvas></div>
+    </div>
+    <div class="sub" id="meteoEmpty" style="margin-top:6px">Loading water temperature…</div>
   </div>
 
 <script>
   const WINDY = "https://images-webcams.windy.com/99/1423817599/current/original/1423817599.jpg";
-  const WIND_JSON = "./wind.json";   // publié par la GitHub Action (station Wingreis exacte)
+  const WIND_JSON = "./wind.json";        // published by the GitHub Action (Wingreis station)
+  const FC_JSON   = "./forecast.json";    // published by the GitHub Action (MeteoSwiss Ipsach)
 
   const $ = id => document.getElementById(id);
-  const fmt = d => d.toLocaleTimeString("fr-CH", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
-  const hhmm = ms => new Date(ms).toLocaleTimeString("fr-CH", {hour:"2-digit", minute:"2-digit"});
+  const fmt  = d  => d.toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const hhmm = ms => new Date(ms).toLocaleTimeString("en-GB", {hour:"2-digit", minute:"2-digit"});
+  const dayHour = ms => new Date(ms).toLocaleString("en-GB", { weekday:"short", hour:"2-digit", minute:"2-digit" });
+
+  // Shared palette so the two wind charts use the same colour code.
+  const C = {
+    gust: "rgb(240,136,62)",   // orange
+    mean: "rgb(75,192,192)",   // teal
+    min:  "rgb(180,180,180)",  // grey
+    dir:  "rgb(155,111,192)",  // purple
+    water:"rgb(64,120,255)"    // blue
+  };
+  const GRID = "rgba(255,255,255,.07)", AXIS = "#8b949e", LEG = "#e6edf3";
+  const timeX = { ticks: { color: AXIS, maxTicksLimit: 12, autoSkip: true }, grid: { color: GRID } };
+
+  function compass(deg) {
+    if (deg == null) return "";
+    return ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
+  }
 
   /* ---------- Webcam 1 ---------- */
   (function(){
     const img=$("cam1"), dot=$("dot1"), b=$("b1");
-    img.addEventListener("load", () => { dot.classList.remove("err"); b.textContent = "En direct · " + fmt(new Date()); });
-    img.addEventListener("error", () => { dot.classList.add("err"); b.textContent = "erreur de chargement"; });
+    img.addEventListener("load", () => { dot.classList.remove("err"); b.textContent = "Live · " + fmt(new Date()); });
+    img.addEventListener("error", () => { dot.classList.add("err"); b.textContent = "load error"; });
   })();
   function loadCam() {
     $("cam1").src = WINDY + "?t=" + Date.now();
-    $("camStatus").textContent = "Webcam màj " + fmt(new Date());
+    $("camStatus").textContent = "Webcam updated " + fmt(new Date());
   }
 
-  /* ---------- Graphes station (style meteobase) ---------- */
-  const GRID = "rgba(255,255,255,.07)", AXIS = "#8b949e", LEG = "#e6edf3";
-  const timeX = {
-    ticks: { color: AXIS, maxTicksLimit: 12, autoSkip: true }, grid: { color: GRID }
-  };
-  let windChart, meteoChart;
-
+  /* ---------- Wind chart (Wingreis station) ---------- */
+  let windChart, meteoChart, fcChart;
   function makeWindChart() {
     windChart = new Chart($("windChart").getContext("2d"), {
       type: "line",
       data: { labels: [], datasets: [
-        // mêmes séries / couleurs que meteobase (cf. dataparser.js.php)
-        { label: "Wind-Spitze [km/h]",  data: [], borderColor: "rgb(155,111,192)", backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: "y" },
-        { label: "Wind-Mittel [km/h]",  data: [], borderColor: "rgb(75,192,192)",  backgroundColor: "rgba(75,192,192,.12)", fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
-        { label: "Wind-Minimum [km/h]", data: [], borderColor: "rgb(180,180,180)", backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1, yAxisID: "y" },
-        { label: "Wind-Richtung [°]",   data: [], borderColor: "rgb(240,136,62)",  backgroundColor: "rgb(240,136,62)", yAxisID: "y1", showLine: false, pointRadius: 1.6 }
+        { label: "Gust km/h",      data: [], borderColor: C.gust, backgroundColor: "rgba(240,136,62,.15)", fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
+        { label: "Mean wind km/h", data: [], borderColor: C.mean, backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
+        { label: "Min wind km/h",  data: [], borderColor: C.min,  backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1, yAxisID: "y" },
+        { label: "Direction °",    data: [], borderColor: C.dir,  backgroundColor: C.dir, yAxisID: "y1", showLine: false, pointRadius: 1.6 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
         interaction: { mode: "index", intersect: false },
         scales: {
           x: timeX,
-          y:  { position: "right", beginAtZero: true, title: { display: true, text: "km/h", color: AXIS },
-                ticks: { color: AXIS }, grid: { color: GRID } },
-          y1: { position: "left", min: 0, max: 360, title: { display: true, text: "Windrichtung °", color: AXIS },
-                ticks: { color: AXIS, stepSize: 90 }, grid: { drawOnChartArea: false } }
+          y:  { position: "right", beginAtZero: true, title: { display: true, text: "km/h", color: AXIS }, ticks: { color: AXIS }, grid: { color: GRID } },
+          y1: { position: "left", min: 0, max: 360, title: { display: true, text: "Direction °", color: AXIS }, ticks: { color: AXIS, stepSize: 90 }, grid: { drawOnChartArea: false } }
         },
         plugins: { legend: { labels: { color: LEG, boxWidth: 14 } } }
       }
     });
   }
 
-  // Séries du 2e graphe (météo) — n'affiche que celles qui ont des données.
+  /* ---------- Water / weather chart (bottom) ---------- */
   const METEO_SERIES = [
-    { key: "airTemp",   label: "Lufttemperatur [°C]",   color: "rgb(238,44,44)",  axis: "y"  },
-    { key: "waterTemp", label: "Wassertemperatur [°C]", color: "rgb(64,120,255)", axis: "y"  },
-    { key: "humidity",  label: "Luftfeuchte [%]",       color: "rgb(0,191,255)",  axis: "y1" },
-    { key: "baro",      label: "Barometer [hPa]",       color: "rgb(150,190,90)", axis: "y3" },
-    { key: "solar",     label: "Solar [W/m²]",          color: "rgb(255,215,0)",  axis: "y2" }
+    { key: "airTemp",   label: "Air temperature °C",   color: "rgb(238,44,44)",  axis: "y"  },
+    { key: "waterTemp", label: "Water temperature °C", color: C.water,           axis: "y"  },
+    { key: "humidity",  label: "Humidity %",           color: "rgb(0,191,255)",  axis: "y1" },
+    { key: "baro",      label: "Pressure hPa",         color: "rgb(150,190,90)", axis: "y3" },
+    { key: "solar",     label: "Solar W/m²",           color: "rgb(255,215,0)",  axis: "y2" }
   ];
   function makeMeteoChart(active) {
     meteoChart = new Chart($("meteoChart").getContext("2d"), {
@@ -209,18 +220,13 @@
         scales: {
           x: timeX,
           y:  { position: "right", title: { display: true, text: "°C", color: AXIS }, ticks: { color: AXIS }, grid: { color: GRID } },
-          y1: { position: "left",  min: 0, max: 100, title: { display: active.some(s=>s.axis==="y1"), text: "%", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false }, display: active.some(s=>s.axis==="y1") },
-          y2: { position: "left",  title: { display: active.some(s=>s.axis==="y2"), text: "W/m²", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false }, display: active.some(s=>s.axis==="y2") },
-          y3: { position: "right", title: { display: active.some(s=>s.axis==="y3"), text: "hPa", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false }, display: active.some(s=>s.axis==="y3") }
+          y1: { position: "left",  min: 0, max: 100, display: active.some(s=>s.axis==="y1"), title: { display: active.some(s=>s.axis==="y1"), text: "%", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false } },
+          y2: { position: "left",  display: active.some(s=>s.axis==="y2"), title: { display: active.some(s=>s.axis==="y2"), text: "W/m²", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false } },
+          y3: { position: "right", display: active.some(s=>s.axis==="y3"), title: { display: active.some(s=>s.axis==="y3"), text: "hPa", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false } }
         },
         plugins: { legend: { labels: { color: LEG, boxWidth: 14 } } }
       }
     });
-  }
-
-  function compass(deg) {
-    if (deg == null) return "–";
-    return ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"][Math.round(deg/22.5)%16];
   }
 
   async function loadWind() {
@@ -236,13 +242,16 @@
       windChart.update();
 
       const last = w[w.length - 1] || {};
-      $("stationHead").textContent = (j.station || "Wingreis") + (last.t ? " · " + new Date(last.t).toLocaleDateString("fr-CH") : "");
+      const lm = (j.meteo && j.meteo.length) ? j.meteo[j.meteo.length - 1] : {};
+      $("stationHead").textContent = (j.station || "Wingreis") + " station"
+        + (last.t ? " · " + new Date(last.t).toLocaleDateString("en-GB") : "");
       $("readouts").innerHTML =
-        `Vent moyen <b>${last.avg ?? "–"}</b> km/h &nbsp;·&nbsp; Rafales <b>${last.gust ?? "–"}</b> km/h ` +
-        `&nbsp;·&nbsp; Direction <b>${last.dir ?? "–"}°</b> ${compass(last.dir)} &nbsp;·&nbsp; ` +
-        `<span class="sub">mesure ${last.t ? hhmm(last.t) : "–"}</span>`;
+        `Mean wind <b>${last.avg ?? "–"}</b> km/h &nbsp;·&nbsp; Gust <b>${last.gust ?? "–"}</b> km/h ` +
+        `&nbsp;·&nbsp; Direction <b>${last.dir ?? "–"}°</b> ${compass(last.dir)}` +
+        (lm.waterTemp != null ? ` &nbsp;·&nbsp; Water <b>${lm.waterTemp}°C</b>` : "") +
+        ` &nbsp;·&nbsp; <span class="sub">measured ${last.t ? hhmm(last.t) : "–"}</span>`;
 
-      // 2e graphe : météo / eau, seulement les séries non vides
+      // bottom chart: water / weather (only non-empty series)
       const m = j.meteo || [];
       const active = METEO_SERIES.filter(s => m.some(p => p[s.key] != null));
       if (active.length) {
@@ -251,28 +260,23 @@
         active.forEach((s, i) => { meteoChart.data.datasets[i].data = m.map(x => x[s.key]); });
         meteoChart.update();
         $("meteoBox").style.display = "";
-        const lm = m[m.length - 1] || {};
-        if (lm.waterTemp != null) {
-          $("readouts").innerHTML += ` &nbsp;·&nbsp; Eau <b>${lm.waterTemp}°C</b>`;
-        }
+        $("meteoEmpty").style.display = "none";
+      } else {
+        $("meteoEmpty").textContent = "No water-temperature data available.";
       }
     } catch (e) {
-      $("readouts").innerHTML = `<span style="color:var(--err)">Erreur données vent : ${e.message} — wind.json pas encore publié ?</span>`;
+      $("readouts").innerHTML = `<span style="color:var(--err)">Wind data error: ${e.message} — wind.json not published yet?</span>`;
     }
   }
 
-  /* ---------- Prévision MétéoSuisse ---------- */
-  const FC_JSON = "./forecast.json";
-  let fcChart;
-  const dayHour = ms => new Date(ms).toLocaleString("fr-CH", { weekday: "short", hour: "2-digit", minute: "2-digit" });
-
+  /* ---------- MeteoSwiss forecast ---------- */
   function makeFcChart() {
     fcChart = new Chart($("fcChart").getContext("2d"), {
       type: "line",
       data: { labels: [], datasets: [
-        { label: "Rafales km/h",    data: [], borderColor: "rgb(240,136,62)", backgroundColor: "rgba(240,136,62,.15)", fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
-        { label: "Vent moyen km/h", data: [], borderColor: "rgb(75,192,192)", backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: "y" },
-        { label: "Direction °",     data: [], borderColor: "rgb(155,111,192)", backgroundColor: "rgb(155,111,192)", yAxisID: "y1", showLine: false, pointRadius: 1.6 }
+        { label: "Gust km/h",      data: [], borderColor: C.gust, backgroundColor: "rgba(240,136,62,.15)", fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
+        { label: "Mean wind km/h", data: [], borderColor: C.mean, backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: "y" },
+        { label: "Direction °",    data: [], borderColor: C.dir,  backgroundColor: C.dir, yAxisID: "y1", showLine: false, pointRadius: 1.6 }
       ]},
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
@@ -290,22 +294,21 @@
   async function loadForecast() {
     try {
       const r = await fetch(FC_JSON + "?t=" + Date.now()); const j = await r.json();
-      const since = Date.now() - 3 * 3600000;                 // on garde la prévision à partir de ~maintenant
+      const since = Date.now() - 3 * 3600000;                 // keep the forecast from ~now on
       const h = (j.hourly || []).filter(p => p.t >= since);
       fcChart.data.labels = h.map(p => dayHour(p.t));
       fcChart.data.datasets[0].data = h.map(p => p.gust);
       fcChart.data.datasets[1].data = h.map(p => p.wind);
-      // direction (cadence 3 h) replacée sur l'axe horaire
       const dirByHour = new Map(h.map(p => [p.t, null]));
       (j.dir || []).forEach(dp => { if (dirByHour.has(dp.t)) dirByHour.set(dp.t, dp.deg); });
       fcChart.data.datasets[2].data = h.map(p => dirByHour.get(p.t));
       fcChart.update();
       const maxGust = h.length ? Math.max(...h.map(p => p.gust)) : null;
       $("fcReadouts").innerHTML =
-        `${j.location || "Port / Ipsach"} &nbsp;·&nbsp; pic de rafale prévu <b>${maxGust ?? "–"}</b> km/h ` +
-        `&nbsp;·&nbsp; <span class="sub">prévision ${h.length} h · MétéoSuisse</span>`;
+        `${j.location || "Ipsach"} &nbsp;·&nbsp; peak gust forecast <b>${maxGust ?? "–"}</b> km/h ` +
+        `&nbsp;·&nbsp; <span class="sub">${h.length} h · MeteoSwiss</span>`;
     } catch (e) {
-      $("fcReadouts").innerHTML = `<span style="color:var(--err)">Erreur prévision : ${e.message} — forecast.json pas encore publié ?</span>`;
+      $("fcReadouts").innerHTML = `<span style="color:var(--err)">Forecast error: ${e.message} — forecast.json not published yet?</span>`;
     }
   }
 
@@ -314,7 +317,7 @@
   function applyInterval() {
     if (timer) { clearInterval(timer); timer = null; }
     const s = parseInt($("interval").value, 10);
-    if (s > 0) timer = setInterval(loadCam, s * 1000);  // la webcam se rafraîchit; le vent est horaire
+    if (s > 0) timer = setInterval(loadCam, s * 1000);
   }
   $("refreshBtn").addEventListener("click", () => { loadCam(); loadWind(); loadForecast(); });
   $("interval").addEventListener("change", applyInterval);
@@ -326,8 +329,8 @@
   loadWind();
   loadForecast();
   applyInterval();
-  setInterval(loadWind, 15 * 60 * 1000);      // données station: toutes les 15 min
-  setInterval(loadForecast, 30 * 60 * 1000);  // prévision: toutes les 30 min
+  setInterval(loadWind, 15 * 60 * 1000);      // station data: every 15 min
+  setInterval(loadForecast, 30 * 60 * 1000);  // forecast: every 30 min
 </script>
 </body>
 </html>
