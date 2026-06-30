@@ -49,8 +49,11 @@
   .readouts b { color: #fff; }
   .topbar { padding: 16px 18px; }
   .chartbox { position: relative; height: 340px; }
-  .windwrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-  iframe#biel { display: block; width: 100%; height: 820px; border: 0; background: #fff; }
+  .camgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .camgrid { grid-template-columns: 1fr; } }
+  .camgrid figure { margin: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .camgrid img { display: block; width: 100%; height: auto; background: #000; }
+  .camgrid figcaption { font-size: 0.78rem; color: var(--muted); padding: 6px 10px; }
 </style>
 </head>
 <body>
@@ -117,15 +120,13 @@
     </div>
   </div>
 
-  <!-- WEBCAM 2 : bielersee.live in an iframe -->
+  <!-- WEBCAM 2 : bielersee.live cameras (static JPEGs baked by the GitHub Action) -->
   <div class="frame">
     <h2>Webcams — bielersee.live</h2>
-    <div class="windwrap">
-      <iframe id="biel" src="https://bielersee.live/" title="bielersee.live webcams" loading="lazy"></iframe>
-    </div>
+    <div class="camgrid" id="camGrid"><span class="sub">Loading cameras…</span></div>
     <div class="sub" style="margin-top:6px">
       Source: <a href="https://bielersee.live/" target="_blank" rel="noopener">bielersee.live</a>
-      (embedded page — scroll inside the frame to see the other cameras)
+      (camera frames fetched and refreshed by the GitHub Action)
     </div>
   </div>
 
@@ -312,6 +313,22 @@
     }
   }
 
+  /* ---------- bielersee cameras (static JPEGs) ---------- */
+  async function loadCams() {
+    try {
+      const r = await fetch("./cams.json?t=" + Date.now()); const j = await r.json();
+      const v = j.updated || Date.now();   // cache-buster: changes only when the Action updates the frames
+      let html = "";
+      for (let i = 0; i < (j.count || 0); i++) {
+        html += `<figure><img src="./cam-${i}.jpg?v=${v}" alt="bielersee camera ${i + 1}" loading="lazy">`
+              + `<figcaption>bielersee cam ${i + 1}</figcaption></figure>`;
+      }
+      $("camGrid").innerHTML = html || `<span class="sub">No cameras available.</span>`;
+    } catch (e) {
+      $("camGrid").innerHTML = `<span style="color:var(--err)">Cameras error: ${e.message} — cams.json not published yet?</span>`;
+    }
+  }
+
   /* ---------- Auto-refresh ---------- */
   let timer = null;
   function applyInterval() {
@@ -319,7 +336,7 @@
     const s = parseInt($("interval").value, 10);
     if (s > 0) timer = setInterval(loadCam, s * 1000);
   }
-  $("refreshBtn").addEventListener("click", () => { loadCam(); loadWind(); loadForecast(); });
+  $("refreshBtn").addEventListener("click", () => { loadCam(); loadWind(); loadForecast(); loadCams(); });
   $("interval").addEventListener("change", applyInterval);
 
   /* ---------- Boot ---------- */
@@ -328,9 +345,11 @@
   loadCam();
   loadWind();
   loadForecast();
+  loadCams();
   applyInterval();
   setInterval(loadWind, 15 * 60 * 1000);      // station data: every 15 min
   setInterval(loadForecast, 30 * 60 * 1000);  // forecast: every 30 min
+  setInterval(loadCams, 15 * 60 * 1000);      // bielersee frames: every 15 min
 </script>
 </body>
 </html>

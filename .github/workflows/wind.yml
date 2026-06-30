@@ -34,17 +34,26 @@ jobs:
         run: node scripts/fetch_wind.mjs
         continue-on-error: true
 
-      - name: Fetch MeteoSwiss forecast (Port / Ipsach)
+      - name: Fetch MeteoSwiss forecast (Ipsach)
         run: node scripts/fetch_forecast.mjs
         continue-on-error: true
+
+      - name: Fetch bielersee.live cameras
+        run: node scripts/fetch_cams.mjs
+        continue-on-error: true
+
+      - name: Downscale camera frames (limit repo churn)
+        run: |
+          sudo apt-get -qq update && sudo apt-get -qq install -y imagemagick
+          mogrify -resize '1000x>' -quality 72 cam-*.jpg || true
 
       - name: Commit data if changed
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add wind.json forecast.json
+          git add wind.json forecast.json cams.json cam-*.jpg
           if ! git diff --cached --quiet; then
-            git commit -m "data: update wind.json + forecast.json"
+            git commit -m "data: update wind.json + forecast.json + cameras"
             git push
           else
             echo "Aucun changement."
