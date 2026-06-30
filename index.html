@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bisou-Biel 💋 — Webcams & Vent du lac de Bienne</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --accent: #2f81f7;
+    --ok: #3fb950; --err: #f85149;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  header { width: 100%; max-width: 1100px; padding: 16px 20px 4px; }
+  h1 { font-size: 1.15rem; margin: 0 0 4px; }
+  h2 { font-size: 1rem; margin: 4px 0 8px; }
+  .sub { color: var(--muted); font-size: 0.85rem; }
+  .frame { width: 100%; max-width: 1100px; padding: 0 20px 24px; }
+  .imgwrap {
+    position: relative; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; min-height: 180px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .imgwrap img { display: block; width: 100%; height: auto; background: #000; }
+  .badge {
+    position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.6);
+    backdrop-filter: blur(4px); padding: 5px 10px; border-radius: 6px;
+    font-size: 0.78rem; display: flex; align-items: center; gap: 7px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .dot.err { background: var(--err); }
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  button, select {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    padding: 7px 14px; border-radius: 7px; font-size: 0.85rem; cursor: pointer;
+  }
+  button:hover, select:hover { border-color: var(--accent); }
+  .status { color: var(--muted); font-size: 0.82rem; margin-left: auto; }
+  a { color: var(--accent); }
+  .chartcard { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .stationhead { text-align: center; font-size: 1.3rem; font-weight: 600; letter-spacing: .02em; margin: 2px 0 2px; }
+  .readouts { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin: 2px 0 12px; font-size: 0.9rem; }
+  .readouts b { color: #fff; }
+  .chartbox { position: relative; height: 340px; }
+  .chartbox + .chartbox { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .windwrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  iframe#biel { display: block; width: 100%; height: 820px; border: 0; background: #fff; }
+  /* iframe station officielle : on recadre pour ne montrer que les relevés (le graphe interne reste blanc) */
+  .stationwrap { background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; height: 330px; }
+  iframe#station { display: block; width: 100%; height: 330px; border: 0; background: #fff; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Bisou-Biel 💋</h1>
+    <div class="sub">Lac de Bienne — Nidauwald / Wingreis (Magglingen-Macolin). Webcam en direct + vent + vue bielersee.live.</div>
+  </header>
+
+  <!-- WEBCAM 1 : Windy / swisswebcams (direct) -->
+  <div class="frame">
+    <h2>Webcam — Nidauwald / Macolin</h2>
+    <div class="imgwrap">
+      <img id="cam1" alt="Webcam Nidauwald / Macolin">
+      <div class="badge"><span id="dot1" class="dot"></span><span id="b1">…</span></div>
+    </div>
+    <div class="controls">
+      <button id="refreshBtn">↻ Rafraîchir</button>
+      <label class="sub">Auto :
+        <select id="interval">
+          <option value="0">off</option>
+          <option value="30">30 s</option>
+          <option value="60" selected>60 s</option>
+          <option value="150">150 s</option>
+          <option value="300">5 min</option>
+        </select>
+      </label>
+      <span class="status" id="camStatus"></span>
+    </div>
+    <div class="sub" style="margin-top:6px">
+      Source : <a href="https://www.swisswebcams.ch/webcam/zoom/1423817599-Nidauwald-Magglingen-Macolin-Lake-Biel-%280-Ipsach%29_Wetter" target="_blank" rel="noopener">swisswebcams.ch</a> (CDN Windy)
+    </div>
+  </div>
+
+  <!-- STATION WINGREIS : graphes maison (wind.json publié par GitHub Action) -->
+  <div class="frame">
+    <h2>Station Wingreis</h2>
+    <div class="chartcard">
+      <div class="stationhead" id="stationHead">Wingreis</div>
+      <div class="readouts" id="readouts"><span class="sub">Chargement des données…</span></div>
+      <div class="chartbox"><canvas id="windChart"></canvas></div>
+      <div class="chartbox" id="meteoBox" style="display:none"><canvas id="meteoChart"></canvas></div>
+    </div>
+    <div class="sub" style="margin-top:6px">
+      Données station <a href="https://wingreis.meteobase.ch/" target="_blank" rel="noopener">wingreis.meteobase.ch</a>
+      (mesures 10 min, ≈ 10 dernières heures), publiées en <code>wind.json</code> par une GitHub Action.
+    </div>
+
+    <!-- Relevés officiels de la station, intégrés en iframe recadré -->
+    <h2 style="margin-top:18px">Relevés officiels</h2>
+    <div class="stationwrap">
+      <iframe id="station" src="https://wingreis.meteobase.ch/" title="Station Wingreis — relevés officiels" loading="lazy" scrolling="no"></iframe>
+    </div>
+    <div class="sub" style="margin-top:6px">
+      Panneau officiel (vent, température de l'eau, gust-factor). Page complète :
+      <a href="https://wingreis.meteobase.ch/" target="_blank" rel="noopener">ouvrir wingreis.meteobase.ch</a>.
+    </div>
+  </div>
+
+  <!-- WEBCAM 2 : bielersee.live en iframe -->
+  <div class="frame">
+    <h2>Webcams bielersee.live</h2>
+    <div class="windwrap">
+      <iframe id="biel" src="https://bielersee.live/" title="Webcams bielersee.live" loading="lazy"></iframe>
+    </div>
+    <div class="sub" style="margin-top:6px">
+      Source : <a href="https://bielersee.live/" target="_blank" rel="noopener">bielersee.live</a>
+      (page intégrée — fais défiler à l'intérieur du cadre pour voir les autres caméras)
+    </div>
+  </div>
+
+<script>
+  const WINDY = "https://images-webcams.windy.com/99/1423817599/current/original/1423817599.jpg";
+  const WIND_JSON = "./wind.json";   // publié par la GitHub Action (station Wingreis exacte)
+
+  const $ = id => document.getElementById(id);
+  const fmt = d => d.toLocaleTimeString("fr-CH", {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  const hhmm = ms => new Date(ms).toLocaleTimeString("fr-CH", {hour:"2-digit", minute:"2-digit"});
+
+  /* ---------- Webcam 1 ---------- */
+  (function(){
+    const img=$("cam1"), dot=$("dot1"), b=$("b1");
+    img.addEventListener("load", () => { dot.classList.remove("err"); b.textContent = "En direct · " + fmt(new Date()); });
+    img.addEventListener("error", () => { dot.classList.add("err"); b.textContent = "erreur de chargement"; });
+  })();
+  function loadCam() {
+    $("cam1").src = WINDY + "?t=" + Date.now();
+    $("camStatus").textContent = "Webcam màj " + fmt(new Date());
+  }
+
+  /* ---------- Graphes station (style meteobase) ---------- */
+  const GRID = "rgba(255,255,255,.07)", AXIS = "#8b949e", LEG = "#e6edf3";
+  const timeX = {
+    ticks: { color: AXIS, maxTicksLimit: 12, autoSkip: true }, grid: { color: GRID }
+  };
+  let windChart, meteoChart;
+
+  function makeWindChart() {
+    windChart = new Chart($("windChart").getContext("2d"), {
+      type: "line",
+      data: { labels: [], datasets: [
+        // mêmes séries / couleurs que meteobase (cf. dataparser.js.php)
+        { label: "Wind-Spitze [km/h]",  data: [], borderColor: "rgb(155,111,192)", backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: "y" },
+        { label: "Wind-Mittel [km/h]",  data: [], borderColor: "rgb(75,192,192)",  backgroundColor: "rgba(75,192,192,.12)", fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
+        { label: "Wind-Minimum [km/h]", data: [], borderColor: "rgb(180,180,180)", backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1, yAxisID: "y" },
+        { label: "Wind-Richtung [°]",   data: [], borderColor: "rgb(240,136,62)",  backgroundColor: "rgb(240,136,62)", yAxisID: "y1", showLine: false, pointRadius: 1.6 }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: timeX,
+          y:  { position: "right", beginAtZero: true, title: { display: true, text: "km/h", color: AXIS },
+                ticks: { color: AXIS }, grid: { color: GRID } },
+          y1: { position: "left", min: 0, max: 360, title: { display: true, text: "Windrichtung °", color: AXIS },
+                ticks: { color: AXIS, stepSize: 90 }, grid: { drawOnChartArea: false } }
+        },
+        plugins: { legend: { labels: { color: LEG, boxWidth: 14 } } }
+      }
+    });
+  }
+
+  // Séries du 2e graphe (météo) — n'affiche que celles qui ont des données.
+  const METEO_SERIES = [
+    { key: "airTemp",   label: "Lufttemperatur [°C]",   color: "rgb(238,44,44)",  axis: "y"  },
+    { key: "waterTemp", label: "Wassertemperatur [°C]", color: "rgb(64,120,255)", axis: "y"  },
+    { key: "humidity",  label: "Luftfeuchte [%]",       color: "rgb(0,191,255)",  axis: "y1" },
+    { key: "baro",      label: "Barometer [hPa]",       color: "rgb(150,190,90)", axis: "y3" },
+    { key: "solar",     label: "Solar [W/m²]",          color: "rgb(255,215,0)",  axis: "y2" }
+  ];
+  function makeMeteoChart(active) {
+    meteoChart = new Chart($("meteoChart").getContext("2d"), {
+      type: "line",
+      data: { labels: [], datasets: active.map(s => ({
+        label: s.label, data: [], borderColor: s.color, backgroundColor: "transparent",
+        tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: s.axis
+      })) },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: timeX,
+          y:  { position: "right", title: { display: true, text: "°C", color: AXIS }, ticks: { color: AXIS }, grid: { color: GRID } },
+          y1: { position: "left",  min: 0, max: 100, title: { display: active.some(s=>s.axis==="y1"), text: "%", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false }, display: active.some(s=>s.axis==="y1") },
+          y2: { position: "left",  title: { display: active.some(s=>s.axis==="y2"), text: "W/m²", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false }, display: active.some(s=>s.axis==="y2") },
+          y3: { position: "right", title: { display: active.some(s=>s.axis==="y3"), text: "hPa", color: AXIS }, ticks: { color: AXIS }, grid: { drawOnChartArea: false }, display: active.some(s=>s.axis==="y3") }
+        },
+        plugins: { legend: { labels: { color: LEG, boxWidth: 14 } } }
+      }
+    });
+  }
+
+  function compass(deg) {
+    if (deg == null) return "–";
+    return ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSO","SO","OSO","O","ONO","NO","NNO"][Math.round(deg/22.5)%16];
+  }
+
+  async function loadWind() {
+    try {
+      const r = await fetch(WIND_JSON + "?t=" + Date.now()); const j = await r.json();
+      const w = j.wind || j.points || [];
+      const labels = w.map(x => hhmm(x.t));
+      windChart.data.labels = labels;
+      windChart.data.datasets[0].data = w.map(x => x.gust);
+      windChart.data.datasets[1].data = w.map(x => x.avg);
+      windChart.data.datasets[2].data = w.map(x => x.min);
+      windChart.data.datasets[3].data = w.map(x => x.dir);
+      windChart.update();
+
+      const last = w[w.length - 1] || {};
+      $("stationHead").textContent = (j.station || "Wingreis") + (last.t ? " · " + new Date(last.t).toLocaleDateString("fr-CH") : "");
+      $("readouts").innerHTML =
+        `Vent moyen <b>${last.avg ?? "–"}</b> km/h &nbsp;·&nbsp; Rafales <b>${last.gust ?? "–"}</b> km/h ` +
+        `&nbsp;·&nbsp; Direction <b>${last.dir ?? "–"}°</b> ${compass(last.dir)} &nbsp;·&nbsp; ` +
+        `<span class="sub">mesure ${last.t ? hhmm(last.t) : "–"}</span>`;
+
+      // 2e graphe : météo / eau, seulement les séries non vides
+      const m = j.meteo || [];
+      const active = METEO_SERIES.filter(s => m.some(p => p[s.key] != null));
+      if (active.length) {
+        if (!meteoChart) makeMeteoChart(active);
+        meteoChart.data.labels = m.map(x => hhmm(x.t));
+        active.forEach((s, i) => { meteoChart.data.datasets[i].data = m.map(x => x[s.key]); });
+        meteoChart.update();
+        $("meteoBox").style.display = "";
+        const lm = m[m.length - 1] || {};
+        if (lm.waterTemp != null) {
+          $("readouts").innerHTML += ` &nbsp;·&nbsp; Eau <b>${lm.waterTemp}°C</b>`;
+        }
+      }
+    } catch (e) {
+      $("readouts").innerHTML = `<span style="color:var(--err)">Erreur données vent : ${e.message} — wind.json pas encore publié ?</span>`;
+    }
+  }
+
+  /* ---------- Auto-refresh ---------- */
+  let timer = null;
+  function applyInterval() {
+    if (timer) { clearInterval(timer); timer = null; }
+    const s = parseInt($("interval").value, 10);
+    if (s > 0) timer = setInterval(loadCam, s * 1000);  // la webcam se rafraîchit; le vent est horaire
+  }
+  $("refreshBtn").addEventListener("click", () => { loadCam(); loadWind(); });
+  $("interval").addEventListener("change", applyInterval);
+
+  /* ---------- Boot ---------- */
+  makeWindChart();
+  loadCam();
+  loadWind();
+  applyInterval();
+  setInterval(loadWind, 15 * 60 * 1000);  // données vent: rafraîchir toutes les 15 min
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+name: Update wind data
+
+# Rafraîchit wind.json (station Wingreis) et le committe dans le repo.
+# GitHub Pages sert ensuite ce fichier en same-origin → pas de problème CORS.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # toutes les 15 min (cadence réelle ~10-20 min selon la charge GitHub)
+  workflow_dispatch:          # bouton "Run workflow" manuel
+  push:
+    branches: [main]          # régénère aussi à chaque push
+
+# autorise le job à pousser le commit
+permissions:
+  contents: write
+
+concurrency:
+  group: wind-data
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch Wingreis wind data
+        run: node scripts/fetch_wind.mjs
+
+      - name: Commit wind.json if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- wind.json; then
+            git add wind.json
+            git commit -m "data: update Wingreis wind.json"
+            git push
+          else
+            echo "Aucun changement dans wind.json."
+          fi
