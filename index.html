@@ -112,6 +112,19 @@
     </div>
   </div>
 
+  <!-- PRÉVISION : MétéoSuisse (forecast.json publié par GitHub Action) -->
+  <div class="frame">
+    <h2>Prévision rafales — MétéoSuisse (Port / Ipsach)</h2>
+    <div class="chartcard">
+      <div class="readouts" id="fcReadouts"><span class="sub">Chargement de la prévision…</span></div>
+      <div class="chartbox"><canvas id="fcChart"></canvas></div>
+    </div>
+    <div class="sub" style="margin-top:6px">
+      Données : <a href="https://www.meteosuisse.admin.ch/previsions-locales/port/2562.html#forecast-tab=wind-gust-peaks" target="_blank" rel="noopener">MétéoSuisse — Port 2562</a>
+      (prévision horaire ~6 jours), publiées en <code>forecast.json</code> par la GitHub Action.
+    </div>
+  </div>
+
   <!-- WEBCAM 2 : bielersee.live en iframe -->
   <div class="frame">
     <h2>Webcams bielersee.live</h2>
@@ -248,6 +261,54 @@
     }
   }
 
+  /* ---------- Prévision MétéoSuisse ---------- */
+  const FC_JSON = "./forecast.json";
+  let fcChart;
+  const dayHour = ms => new Date(ms).toLocaleString("fr-CH", { weekday: "short", hour: "2-digit", minute: "2-digit" });
+
+  function makeFcChart() {
+    fcChart = new Chart($("fcChart").getContext("2d"), {
+      type: "line",
+      data: { labels: [], datasets: [
+        { label: "Rafales km/h",    data: [], borderColor: "rgb(240,136,62)", backgroundColor: "rgba(240,136,62,.15)", fill: true, tension: .3, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
+        { label: "Vent moyen km/h", data: [], borderColor: "rgb(75,192,192)", backgroundColor: "transparent", tension: .3, pointRadius: 0, borderWidth: 1.5, yAxisID: "y" },
+        { label: "Direction °",     data: [], borderColor: "rgb(155,111,192)", backgroundColor: "rgb(155,111,192)", yAxisID: "y1", showLine: false, pointRadius: 1.6 }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: timeX,
+          y:  { position: "right", beginAtZero: true, title: { display: true, text: "km/h", color: AXIS }, ticks: { color: AXIS }, grid: { color: GRID } },
+          y1: { position: "left", min: 0, max: 360, title: { display: true, text: "Direction °", color: AXIS }, ticks: { color: AXIS, stepSize: 90 }, grid: { drawOnChartArea: false } }
+        },
+        plugins: { legend: { labels: { color: LEG, boxWidth: 14 } } }
+      }
+    });
+  }
+
+  async function loadForecast() {
+    try {
+      const r = await fetch(FC_JSON + "?t=" + Date.now()); const j = await r.json();
+      const since = Date.now() - 3 * 3600000;                 // on garde la prévision à partir de ~maintenant
+      const h = (j.hourly || []).filter(p => p.t >= since);
+      fcChart.data.labels = h.map(p => dayHour(p.t));
+      fcChart.data.datasets[0].data = h.map(p => p.gust);
+      fcChart.data.datasets[1].data = h.map(p => p.wind);
+      // direction (cadence 3 h) replacée sur l'axe horaire
+      const dirByHour = new Map(h.map(p => [p.t, null]));
+      (j.dir || []).forEach(dp => { if (dirByHour.has(dp.t)) dirByHour.set(dp.t, dp.deg); });
+      fcChart.data.datasets[2].data = h.map(p => dirByHour.get(p.t));
+      fcChart.update();
+      const maxGust = h.length ? Math.max(...h.map(p => p.gust)) : null;
+      $("fcReadouts").innerHTML =
+        `${j.location || "Port / Ipsach"} &nbsp;·&nbsp; pic de rafale prévu <b>${maxGust ?? "–"}</b> km/h ` +
+        `&nbsp;·&nbsp; <span class="sub">prévision ${h.length} h · MétéoSuisse</span>`;
+    } catch (e) {
+      $("fcReadouts").innerHTML = `<span style="color:var(--err)">Erreur prévision : ${e.message} — forecast.json pas encore publié ?</span>`;
+    }
+  }
+
   /* ---------- Auto-refresh ---------- */
   let timer = null;
   function applyInterval() {
@@ -255,15 +316,18 @@
     const s = parseInt($("interval").value, 10);
     if (s > 0) timer = setInterval(loadCam, s * 1000);  // la webcam se rafraîchit; le vent est horaire
   }
-  $("refreshBtn").addEventListener("click", () => { loadCam(); loadWind(); });
+  $("refreshBtn").addEventListener("click", () => { loadCam(); loadWind(); loadForecast(); });
   $("interval").addEventListener("change", applyInterval);
 
   /* ---------- Boot ---------- */
   makeWindChart();
+  makeFcChart();
   loadCam();
   loadWind();
+  loadForecast();
   applyInterval();
-  setInterval(loadWind, 15 * 60 * 1000);  // données vent: rafraîchir toutes les 15 min
+  setInterval(loadWind, 15 * 60 * 1000);      // données station: toutes les 15 min
+  setInterval(loadForecast, 30 * 60 * 1000);  // prévision: toutes les 30 min
 </script>
 </body>
 </html>

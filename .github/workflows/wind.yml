@@ -31,14 +31,17 @@ jobs:
       - name: Fetch Wingreis wind data
         run: node scripts/fetch_wind.mjs
 
-      - name: Commit wind.json if changed
+      - name: Fetch MeteoSwiss forecast (Port / Ipsach)
+        run: node scripts/fetch_forecast.mjs
+
+      - name: Commit data if changed
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet -- wind.json; then
-            git add wind.json
-            git commit -m "data: update Wingreis wind.json"
+          git add wind.json forecast.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: update wind.json + forecast.json"
             git push
           else
-            echo "Aucun changement dans wind.json."
+            echo "Aucun changement."
           fi
