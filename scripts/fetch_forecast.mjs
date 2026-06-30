@@ -17,7 +17,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const PLZ = process.argv[2] || "256200"; // Port (2562) ; Ipsach = 256300
+const PLZ = process.argv[2] || "256300"; // Ipsach (2563) ; Port = 256200
 const URL = `https://app-prod-ws.meteoswiss-app.ch/v1/plzDetail?plz=${PLZ}`;
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
@@ -65,7 +65,7 @@ async function main() {
   const out = {
     updated: Date.now(),
     plz: PLZ,
-    location: "Port / Ipsach",
+    location: "Ipsach",
     start,
     hourly,
     dir,
