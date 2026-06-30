@@ -49,11 +49,20 @@
   .readouts b { color: #fff; }
   .topbar { padding: 16px 18px; }
   .chartbox { position: relative; height: 340px; }
-  .camgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 760px) { .camgrid { grid-template-columns: 1fr; } }
+  .camgrid { display: grid; grid-template-columns: 1fr; gap: 16px; }
   .camgrid figure { margin: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .camgrid img { display: block; width: 100%; height: auto; background: #000; }
   .camgrid figcaption { font-size: 0.78rem; color: var(--muted); padding: 6px 10px; }
+  /* clickable images -> fullscreen */
+  .zoomable { cursor: zoom-in; }
+  #lightbox {
+    position: fixed; inset: 0; z-index: 1000; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(0,0,0,.93); cursor: zoom-out;
+  }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 96vw; max-height: 96vh; width: auto; height: auto; object-fit: contain; }
+  #lightbox .hint { position: fixed; top: 14px; right: 18px; color: #fff; opacity: .7; font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -74,7 +83,7 @@
   <div class="frame">
     <h2>Webcam — Nidauwald / Macolin</h2>
     <div class="imgwrap">
-      <img id="cam1" alt="Nidauwald / Macolin webcam">
+      <img id="cam1" class="zoomable" alt="Nidauwald / Macolin webcam">
       <div class="badge"><span id="dot1" class="dot"></span><span id="b1">…</span></div>
     </div>
     <div class="controls">
@@ -139,6 +148,9 @@
     <div class="sub" id="meteoEmpty" style="margin-top:6px">Loading water temperature…</div>
   </div>
 
+  <!-- Fullscreen image viewer -->
+  <div id="lightbox"><span class="hint">click / Esc to close</span><img id="lightboxImg" alt=""></div>
+
 <script>
   const WINDY = "https://images-webcams.windy.com/99/1423817599/current/original/1423817599.jpg";
   const WIND_JSON = "./wind.json";        // published by the GitHub Action (Wingreis station)
@@ -164,6 +176,26 @@
     if (deg == null) return "";
     return ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5)%16];
   }
+
+  /* ---------- Fullscreen image viewer (lightbox) ---------- */
+  const lb = $("lightbox"), lbImg = $("lightboxImg");
+  function openLightbox(src) {
+    lbImg.src = src;
+    lb.classList.add("open");
+    if (lb.requestFullscreen) lb.requestFullscreen().catch(() => {}); // true OS fullscreen where allowed
+  }
+  function closeLightbox() {
+    lb.classList.remove("open");
+    lbImg.removeAttribute("src");
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  }
+  lb.addEventListener("click", closeLightbox);
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+  // any .zoomable image (webcam + bielersee cams, incl. dynamically added) opens fullscreen
+  document.addEventListener("click", e => {
+    const img = e.target.closest("img.zoomable");
+    if (img) openLightbox(img.src);
+  });
 
   /* ---------- Webcam 1 ---------- */
   (function(){
@@ -320,7 +352,7 @@
       const v = j.updated || Date.now();   // cache-buster: changes only when the Action updates the frames
       let html = "";
       for (let i = 0; i < (j.count || 0); i++) {
-        html += `<figure><img src="./cam-${i}.jpg?v=${v}" alt="bielersee camera ${i + 1}" loading="lazy">`
+        html += `<figure><img class="zoomable" src="./cam-${i}.jpg?v=${v}" alt="bielersee camera ${i + 1}" loading="lazy">`
               + `<figcaption>bielersee cam ${i + 1}</figcaption></figure>`;
       }
       $("camGrid").innerHTML = html || `<span class="sub">No cameras available.</span>`;
