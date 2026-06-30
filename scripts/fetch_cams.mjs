@@ -48,8 +48,10 @@ async function main() {
   const home = await req(BIEL);
   const cookie = (home.headers.get("set-cookie") || "").split(";")[0] || null;
   const html = await home.text();
-  const cams = [...new Set(html.match(/imager\.php\?u=[0-9a-f]+&c=[0-9a-f]+&s=[0-9a-f]+/g) || [])];
-  if (!cams.length) throw new Error("aucune caméra trouvée sur bielersee.live");
+  const MAX_CAMS = 2; // on ne garde que les 2 premières caméras (poids du repo)
+  const all = [...new Set(html.match(/imager\.php\?u=[0-9a-f]+&c=[0-9a-f]+&s=[0-9a-f]+/g) || [])];
+  if (!all.length) throw new Error("aucune caméra trouvée sur bielersee.live");
+  const cams = all.slice(0, MAX_CAMS);
 
   let saved = 0;
   for (let i = 0; i < cams.length; i++) {
