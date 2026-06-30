@@ -29,18 +29,32 @@ const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124 Safari/537.36";
 
-async function get(url, cookie) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": UA,
-      Referer: REF,
-      ...(cookie ? { Cookie: cookie } : {}),
-    },
-    redirect: "follow",
-  });
-  if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
-  const setCookie = res.headers.get("set-cookie");
-  return { text: await res.text(), cookie: setCookie ? setCookie.split(";")[0] : null };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function get(url, cookie, attempt = 1) {
+  const MAX = 4;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": UA,
+        Referer: REF,
+        Accept: "text/html,application/json,*/*",
+        "Accept-Language": "fr-CH,fr;q=0.9,de;q=0.8,en;q=0.7",
+        ...(cookie ? { Cookie: cookie } : {}),
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const setCookie = res.headers.get("set-cookie");
+    return { text: await res.text(), cookie: setCookie ? setCookie.split(";")[0] : null };
+  } catch (e) {
+    if (attempt >= MAX) throw new Error(`${url} -> ${e.message} (après ${MAX} essais)`);
+    const wait = 1000 * 3 ** (attempt - 1); // 1s, 3s, 9s
+    console.error(`  tentative ${attempt} échouée (${e.message}), retry dans ${wait}ms…`);
+    await sleep(wait);
+    return get(url, cookie, attempt + 1);
+  }
 }
 
 function parsePoints(text) {

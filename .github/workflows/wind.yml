@@ -28,11 +28,15 @@ jobs:
         with:
           node-version: "20"
 
+      # continue-on-error : une source temporairement KO ne casse pas le run ;
+      # le JSON existant est conservé tel quel (les scripts n'écrivent qu'en cas de succès).
       - name: Fetch Wingreis wind data
         run: node scripts/fetch_wind.mjs
+        continue-on-error: true
 
       - name: Fetch MeteoSwiss forecast (Port / Ipsach)
         run: node scripts/fetch_forecast.mjs
+        continue-on-error: true
 
       - name: Commit data if changed
         run: |

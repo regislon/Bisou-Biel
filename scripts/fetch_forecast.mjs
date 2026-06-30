@@ -23,10 +23,28 @@ const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/124 Safari/537.36";
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function getJSON(url, attempt = 1) {
+  const MAX = 4;
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": UA, Accept: "application/json", "Accept-Language": "fr-CH,fr;q=0.9" },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  } catch (e) {
+    if (attempt >= MAX) throw new Error(`${url} -> ${e.message} (après ${MAX} essais)`);
+    const wait = 1000 * 3 ** (attempt - 1);
+    console.error(`  tentative ${attempt} échouée (${e.message}), retry dans ${wait}ms…`);
+    await sleep(wait);
+    return getJSON(url, attempt + 1);
+  }
+}
+
 async function main() {
-  const res = await fetch(URL, { headers: { "User-Agent": UA, Accept: "application/json" } });
-  if (!res.ok) throw new Error(`plzDetail ${PLZ} -> HTTP ${res.status}`);
-  const d = await res.json();
+  const d = await getJSON(URL);
   const g = d.graph;
   if (!g || !g.gustSpeed1h) throw new Error("graph.gustSpeed1h absent");
 
